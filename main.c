@@ -162,25 +162,6 @@ int main(int argc, char * argv[]) {
         SDL_RenderClear(renderer);
 
         drawGrid(renderer, grid, CELLS_X, CELLS_Y);
-
-        SDL_SetRenderDrawColor(renderer, 0x00, 0xFF, 0x00, 0xFF);
-        SDL_Rect startRect = {
-            0,
-            0,
-            CELL_SIZE,
-            CELL_SIZE
-        };
-        SDL_RenderFillRect(renderer, & startRect);
-
-        SDL_SetRenderDrawColor(renderer, 0xFF, 0x00, 0x00, 0xFF);
-        SDL_Rect endRect = {
-            (CELLS_X - 1) * CELL_SIZE,
-            (CELLS_Y - 1) * CELL_SIZE,
-            CELL_SIZE,
-            CELL_SIZE
-        };
-        SDL_RenderFillRect(renderer, & endRect);
-
         SDL_RenderPresent(renderer);
     }
     
