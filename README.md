@@ -7,3 +7,9 @@
 ### How to run and show available commands
 
 `./main --help`
+
+### Algorithms used
+
+`easy: Recursive Backtracking`
+`medium: Prim's Algorithm`
+`hard: Kruskal's Algorithm`
