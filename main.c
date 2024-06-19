@@ -1,4 +1,5 @@
 #include <SDL2/SDL.h>
+#include <SDL2/SDL_image.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
@@ -21,32 +22,31 @@ typedef enum {
     DOWN,
     LEFT,
     RIGHT
-}
-Direction;
+} Direction;
 
 typedef struct {
     int x, y;
     int visited;
     int walls[4];
-}
-Cell;
+} Cell;
 
-void initGrid(Cell ** grid, int cellsX, int cellsY);
-void freeGrid(Cell ** grid, int cellsX);
-void removeWalls(Cell * current, Cell * next);
-void drawGrid(SDL_Renderer * renderer, Cell ** grid, int cellsX, int cellsY);
-Cell * getNeighbour(Cell ** grid, Cell * current, int cellsX, int cellsY);
+void initGrid(Cell** grid, int cellsX, int cellsY);
+void freeGrid(Cell** grid, int cellsX);
+void removeWalls(Cell* current, Cell* next);
+void drawGrid(SDL_Renderer* renderer, Cell** grid, int cellsX, int cellsY);
+Cell* getNeighbour(Cell** grid, Cell* current, int cellsX, int cellsY);
+int saveMazeAsPNG(SDL_Renderer* renderer, const char* filePath);
 
-int main(int argc, char * argv[]) {
-
+int main(int argc, char* argv[]) {
     int steps = 1;
+    int save = 0;
 
     if (argc > 1) {
         for (int i = 1; i < argc; ++i) {
             if (strcmp(argv[i], "--steps") == 0 || strcmp(argv[i], "-s") == 0) {
                 if (i + 1 < argc) {
                     if (strcmp(argv[i + 1], "instant") == 0) {
-                        steps = CELLS_X * CELLS_Y - 1;
+                        steps = 1215752192;
                     } else {
                         steps = atoi(argv[i + 1]);
                     }
@@ -63,12 +63,15 @@ int main(int argc, char * argv[]) {
                 printf("  -c, --cells <x> <y>    Number of cells along X and Y axes (default: 20x20)\n");
                 printf("  -v, --version          Show current version and build timestamp of the program\n");
                 printf("  -h, --help             Show this help message\n");
+                printf("  --save                 Save the maze as a PNG file\n");
                 printf("\n");
-                return 0; 
+                return 0;
             } else if (strcmp(argv[i], "--version") == 0 || strcmp(argv[i], "-v") == 0) {
                 printf("Maze v%s\n", VERSION_STRING);
                 printf("Build Timestamp: %s\n", get_build_timestamp());
                 return 0;
+            } else if (strcmp(argv[i], "--save") == 0) {
+                save = 1;
             }
         }
     }
@@ -80,7 +83,7 @@ int main(int argc, char * argv[]) {
         return 1;
     }
 
-    SDL_Window * window = SDL_CreateWindow("Maze", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED,
+    SDL_Window* window = SDL_CreateWindow("Maze", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED,
         SCREEN_WIDTH, SCREEN_HEIGHT, SDL_WINDOW_SHOWN);
     if (!window) {
         printf("Error: %s\n", SDL_GetError());
@@ -88,7 +91,7 @@ int main(int argc, char * argv[]) {
         return 1;
     }
 
-    SDL_Renderer * renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
+    SDL_Renderer* renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
     if (!renderer) {
         printf("Error: %s\n", SDL_GetError());
         SDL_DestroyWindow(window);
@@ -96,7 +99,7 @@ int main(int argc, char * argv[]) {
         return 1;
     }
 
-    Cell ** grid = calloc(CELLS_X, sizeof(Cell * ));
+    Cell** grid = calloc(CELLS_X, sizeof(Cell*));
     if (!grid) {
         printf("Failed to allocate memory for grid\n");
         SDL_DestroyRenderer(renderer);
@@ -122,9 +125,9 @@ int main(int argc, char * argv[]) {
 
     initGrid(grid, CELLS_X, CELLS_Y);
 
-    Cell * current = & grid[0][0];
-    current -> visited = 1;
-    Cell * stack[CELLS_X * CELLS_Y];
+    Cell* current = &grid[0][0];
+    current->visited = 1;
+    Cell* stack[CELLS_X * CELLS_Y];
     int stackSize = 0;
     srand(time(0));
 
@@ -134,7 +137,7 @@ int main(int argc, char * argv[]) {
     int mazeGenerated = 0;
 
     while (!quit) {
-        while (SDL_PollEvent( & e) != 0) {
+        while (SDL_PollEvent(&e) != 0) {
             if (e.type == SDL_QUIT) {
                 quit = 1;
             }
@@ -142,10 +145,10 @@ int main(int argc, char * argv[]) {
 
         if (!mazeGenerated) {
             int remainingSteps = steps;
-            while (remainingSteps--> 0) {
-                Cell * next = getNeighbour(grid, current, CELLS_X, CELLS_Y);
+            while (remainingSteps-- > 0) {
+                Cell* next = getNeighbour(grid, current, CELLS_X, CELLS_Y);
                 if (next != NULL) {
-                    next -> visited = 1;
+                    next->visited = 1;
                     stack[stackSize++] = current;
                     removeWalls(current, next);
                     current = next;
@@ -164,7 +167,18 @@ int main(int argc, char * argv[]) {
         drawGrid(renderer, grid, CELLS_X, CELLS_Y);
         SDL_RenderPresent(renderer);
     }
-    
+
+    if (save) {
+        time_t t = time(NULL);
+        char filePath[64];
+        snprintf(filePath, sizeof(filePath), "%ld.png", t);
+        if (saveMazeAsPNG(renderer, filePath) != 0) {
+            printf("Failed to save the maze as a PNG file\n");
+        } else {
+            printf("Maze saved as %s\n", filePath);
+        }
+    }
+
     freeGrid(grid, CELLS_X);
     SDL_DestroyRenderer(renderer);
     SDL_DestroyWindow(window);
@@ -173,7 +187,7 @@ int main(int argc, char * argv[]) {
     return 0;
 }
 
-void initGrid(Cell ** grid, int cellsX, int cellsY) {
+void initGrid(Cell** grid, int cellsX, int cellsY) {
     for (int x = 0; x < cellsX; x++) {
         for (int y = 0; y < cellsY; y++) {
             grid[x][y].x = x;
@@ -184,37 +198,35 @@ void initGrid(Cell ** grid, int cellsX, int cellsY) {
     }
 }
 
-void freeGrid(Cell ** grid, int cellsX) {
+void freeGrid(Cell** grid, int cellsX) {
     for (int x = 0; x < cellsX; x++) {
         free(grid[x]);
     }
     free(grid);
 }
 
-void removeWalls(Cell * current, Cell * next) {
-    int dx = next -> x - current -> x;
-    int dy = next -> y - current -> y;
+void removeWalls(Cell* current, Cell* next) {
+    int dx = next->x - current->x;
+    int dy = next->y - current->y;
 
     if (dx == 1) {
-        current -> walls[RIGHT] = 0;
-        next -> walls[LEFT] = 0;
+        current->walls[RIGHT] = 0;
+        next->walls[LEFT] = 0;
     } else if (dx == -1) {
-        current -> walls[LEFT] = 0;
-        next -> walls[RIGHT] = 0;
+        current->walls[LEFT] = 0;
+        next->walls[RIGHT] = 0;
     }
 
     if (dy == 1) {
-        current -> walls[DOWN] = 0;
-        next -> walls[UP] = 0;
+        current->walls[DOWN] = 0;
+        next->walls[UP] = 0;
     } else if (dy == -1) {
-        current -> walls[UP] = 0;
-        next -> walls[DOWN] = 0;
+        current->walls[UP] = 0;
+        next->walls[DOWN] = 0;
     }
 }
 
-void drawGrid(SDL_Renderer * renderer, Cell ** grid, int cellsX, int cellsY) {
-    SDL_SetRenderDrawColor(renderer, 0, 0, 0, 0xFF);
-
+void drawGrid(SDL_Renderer* renderer, Cell** grid, int cellsX, int cellsY) {
     int offsetX = (SCREEN_WIDTH - cellsX * CELL_SIZE) / 2;
     int offsetY = (SCREEN_HEIGHT - cellsY * CELL_SIZE) / 2;
 
@@ -224,6 +236,18 @@ void drawGrid(SDL_Renderer * renderer, Cell ** grid, int cellsX, int cellsY) {
             int y1 = offsetY + y * CELL_SIZE;
             int x2 = x1 + CELL_SIZE;
             int y2 = y1 + CELL_SIZE;
+
+            if (x == 0 && y == 0) {
+                SDL_SetRenderDrawColor(renderer, 0, 255, 0, 255);
+                SDL_Rect rect = {x1, y1, CELL_SIZE, CELL_SIZE};
+                SDL_RenderFillRect(renderer, &rect);
+            } else if (x == cellsX - 1 && y == cellsY - 1) {
+                SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
+                SDL_Rect rect = {x1, y1, CELL_SIZE, CELL_SIZE};
+                SDL_RenderFillRect(renderer, &rect);
+            }
+
+            SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
 
             if (grid[x][y].walls[UP]) {
                 SDL_RenderDrawLine(renderer, x1, y1, x2, y1);
@@ -241,22 +265,48 @@ void drawGrid(SDL_Renderer * renderer, Cell ** grid, int cellsX, int cellsY) {
     }
 }
 
-Cell * getNeighbour(Cell ** grid, Cell * current, int cellsX, int cellsY) {
-    Cell * neighbours[4];
+Cell* getNeighbour(Cell** grid, Cell* current, int cellsX, int cellsY) {
+    Cell* neighbours[4];
     int n = 0;
 
-    if (current -> y > 0 && !grid[current -> x][current -> y - 1].visited) {
-        neighbours[n++] = & grid[current -> x][current -> y - 1];
+    if (current->y > 0 && !grid[current->x][current->y - 1].visited) {
+        neighbours[n++] = &grid[current->x][current->y - 1];
     }
-    if (current -> y < cellsY - 1 && !grid[current -> x][current -> y + 1].visited) {
-        neighbours[n++] = & grid[current -> x][current -> y + 1];
+    if (current->y < cellsY - 1 && !grid[current->x][current->y + 1].visited) {
+        neighbours[n++] = &grid[current->x][current->y + 1];
     }
-    if (current -> x > 0 && !grid[current -> x - 1][current -> y].visited) {
-        neighbours[n++] = & grid[current -> x - 1][current -> y];
+    if (current->x > 0 && !grid[current->x - 1][current->y].visited) {
+        neighbours[n++] = &grid[current->x - 1][current->y];
     }
-    if (current -> x < cellsX - 1 && !grid[current -> x + 1][current -> y].visited) {
-        neighbours[n++] = & grid[current -> x + 1][current -> y];
+    if (current->x < cellsX - 1 && !grid[current->x + 1][current->y].visited) {
+        neighbours[n++] = &grid[current->x + 1][current->y];
     }
 
     return (n > 0) ? neighbours[rand() % n] : NULL;
+}
+
+int saveMazeAsPNG(SDL_Renderer* renderer, const char* filePath) {
+    int width, height;
+    SDL_GetRendererOutputSize(renderer, &width, &height);
+
+    SDL_Surface* surface = SDL_CreateRGBSurfaceWithFormat(0, width, height, 32, SDL_PIXELFORMAT_RGBA32);
+    if (!surface) {
+        printf("Failed to create surface: %s\n", SDL_GetError());
+        return -1;
+    }
+
+    if (SDL_RenderReadPixels(renderer, NULL, surface->format->format, surface->pixels, surface->pitch) != 0) {
+        printf("Failed to read pixels: %s\n", SDL_GetError());
+        SDL_FreeSurface(surface);
+        return -1;
+    }
+
+    if (IMG_SavePNG(surface, filePath) != 0) {
+        printf("Failed to save PNG: %s\n", IMG_GetError());
+        SDL_FreeSurface(surface);
+        return -1;
+    }
+
+    SDL_FreeSurface(surface);
+    return 0;
 }
