@@ -11,5 +11,4 @@
 ### Algorithms used
 
 `easy: Recursive Backtracking`
-`medium: Prim's Algorithm`
 `hard: Kruskal's Algorithm`

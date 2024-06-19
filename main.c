@@ -42,7 +42,6 @@ int saveMazeAsPNG(SDL_Renderer * renderer,
     const char * filePath);
 
 void generateMazeEasy(Cell ** grid, int cellsX, int cellsY, int steps);
-void generateMazeMedium(Cell ** grid, int cellsX, int cellsY);
 void generateMazeHard(Cell ** grid, int cellsX, int cellsY);
 
 int main(int argc, char * argv[]) {
@@ -64,7 +63,7 @@ int main(int argc, char * argv[]) {
             } else if (strcmp(argv[i], "--help") == 0 || strcmp(argv[i], "-h") == 0) {
                 printf("\nOptions:\n");
                 printf("  -c, --cells <x> <y>          Number of cells along X and Y axes (default: 20x20)\n");
-                printf("  -d, --difficulty <level>     Difficulty level: easy, medium, hard (default: easy)\n");
+                printf("  -d, --difficulty <level>     Difficulty level: easy, hard (default: easy)\n");
                 printf("  -v, --version                Show current version and build timestamp of the program\n");
                 printf("  -h, --help                   Show this help message\n");
                 printf("  --save                       Save the maze as a PNG file\n");
@@ -133,8 +132,6 @@ int main(int argc, char * argv[]) {
 
     if (strcmp(difficulty, "easy") == 0) {
         generateMazeEasy(grid, CELLS_X, CELLS_Y, steps);
-    } else if (strcmp(difficulty, "medium") == 0) {
-        generateMazeMedium(grid, CELLS_X, CELLS_Y);
     } else if (strcmp(difficulty, "hard") == 0) {
         generateMazeHard(grid, CELLS_X, CELLS_Y);
     } else {
@@ -308,37 +305,6 @@ void generateMazeEasy(Cell ** grid, int cellsX, int cellsY, int steps) {
             current = stack[--stackSize];
         } else {
             break;
-        }
-    }
-}
-
-void generateMazeMedium(Cell ** grid, int cellsX, int cellsY) {
-    Cell * current = & grid[rand() % cellsX][rand() % cellsY];
-    current -> visited = 1;
-
-    while (1) {
-        Cell * next = getNeighbour(grid, current, cellsX, cellsY);
-        if (next != NULL) {
-            removeWalls(current, next);
-            next -> visited = 1;
-            current = next;
-        } else {
-            int found = 0;
-            for (int x = 0; x < cellsX; ++x) {
-                for (int y = 0; y < cellsY; ++y) {
-                    if (!grid[x][y].visited && getNeighbour(grid, & grid[x][y], cellsX, cellsY) != NULL) {
-                        current = & grid[x][y];
-                        Cell * next = getNeighbour(grid, current, cellsX, cellsY);
-                        removeWalls(current, next);
-                        next -> visited = 1;
-                        current = next;
-                        found = 1;
-                        break;
-                    }
-                }
-                if (found) break;
-            }
-            if (!found) break;
         }
     }
 }
