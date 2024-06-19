@@ -24,6 +24,10 @@ void removeWalls(Cell *current, Cell *next);
 void drawGrid(SDL_Renderer *renderer, Cell grid[GRID_WIDTH][GRID_HEIGHT]);
 Cell* getNeighbour(Cell grid[GRID_WIDTH][GRID_HEIGHT], Cell *current);
 
+const char* get_build_timestamp() {
+    return __DATE__ " " __TIME__;
+}
+
 int main(int argc, char* argv[]) {
 
     int steps = 1;
@@ -39,13 +43,17 @@ int main(int argc, char* argv[]) {
                     }
                 }
             } else if (strcmp(argv[i], "--help") == 0 || strcmp(argv[i], "-h") == 0) {
-                printf("Options:\n");
+                printf("\nOptions:\n");
                 printf("  -s, --steps <steps>    Number of steps to perform (default: 1)\n");
                 printf("                         Use 'instant' to generate complete maze at once\n");
+                printf("  -v, --version          Show current version and build timestamp of the program\n");
                 printf("  -h, --help             Show this help message\n");
                 printf("\n");
-                printf("Maze Version %s\n", VERSION_STRING);
                 return 0; 
+            } else if (strcmp(argv[i], "--version") == 0 || strcmp(argv[i], "-v") == 0) {
+                printf("Maze v%s\n", VERSION_STRING);
+                printf("Build Timestamp: %s\n", get_build_timestamp());
+                return 0;
             }
         }
     }
