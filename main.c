@@ -92,26 +92,30 @@ int main(int argc, char* argv[]) {
     int quit = 0;
     SDL_Event e;
 
-    while (!quit) {
+int mazeGenerated = 0;
 
+    while (!quit) {
         while (SDL_PollEvent(&e) != 0) {
             if (e.type == SDL_QUIT) {
                 quit = 1;
             }
         }
 
-        int remainingSteps = steps;
-        while (remainingSteps-- > 0) {
-            Cell *next = getNeighbour(grid, current);
-            if (next != NULL) {
-                next->visited = 1;
-                stack[stackSize++] = current;
-                removeWalls(current, next);
-                current = next;
-            } else if (stackSize > 0) {
-                current = stack[--stackSize];
-            } else {
-                break;
+        if (!mazeGenerated) {
+            int remainingSteps = steps;
+            while (remainingSteps-- > 0) {
+                Cell *next = getNeighbour(grid, current);
+                if (next != NULL) {
+                    next->visited = 1;
+                    stack[stackSize++] = current;
+                    removeWalls(current, next);
+                    current = next;
+                } else if (stackSize > 0) {
+                    current = stack[--stackSize];
+                } else {
+                    mazeGenerated = 1;
+                    break;
+                }
             }
         }
 
@@ -130,6 +134,7 @@ int main(int argc, char* argv[]) {
 
         SDL_RenderPresent(renderer);
     }
+
 
     SDL_DestroyRenderer(renderer);
     SDL_DestroyWindow(window);
