@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
+#include <string.h>
 
 #define SCREEN_WIDTH 600
 #define SCREEN_HEIGHT 600
@@ -14,7 +15,7 @@ typedef enum { UP, DOWN, LEFT, RIGHT } Direction;
 typedef struct {
     int x, y;
     int visited;
-    int walls[4]; 
+    int walls[4];
 } Cell;
 
 void initGrid(Cell grid[GRID_WIDTH][GRID_HEIGHT]);
@@ -24,18 +25,34 @@ Cell* getNeighbour(Cell grid[GRID_WIDTH][GRID_HEIGHT], Cell *current);
 
 int main(int argc, char* argv[]) {
 
+    int steps = 1;
+
+    if (argc > 1) {
+        for (int i = 1; i < argc; ++i) {
+            if (strcmp(argv[i], "--steps") == 0) {
+                if (i + 1 < argc) {
+                    if (strcmp(argv[i + 1], "instant") == 0) {
+                        steps = GRID_WIDTH * GRID_HEIGHT - 1;
+                    } else {
+                        steps = atoi(argv[i + 1]);
+                    }
+                }
+            }
+        }
+    }
+
     if (SDL_Init(SDL_INIT_VIDEO) < 0) {
         printf("SDL_Error: %s\n", SDL_GetError());
         return 1;
     }
 
     SDL_Window* window = SDL_CreateWindow(
-        "Maze",               
-        SDL_WINDOWPOS_UNDEFINED,        
-        SDL_WINDOWPOS_UNDEFINED,        
-        SCREEN_WIDTH,                   
-        SCREEN_HEIGHT,                  
-        SDL_WINDOW_SHOWN                
+        "Maze",
+        SDL_WINDOWPOS_UNDEFINED,
+        SDL_WINDOWPOS_UNDEFINED,
+        SCREEN_WIDTH,
+        SCREEN_HEIGHT,
+        SDL_WINDOW_SHOWN
     );
 
     if (window == NULL) {
@@ -60,20 +77,24 @@ int main(int argc, char* argv[]) {
     while (!quit) {
 
         while (SDL_PollEvent(&e) != 0) {
-
             if (e.type == SDL_QUIT) {
                 quit = 1;
             }
         }
 
-        Cell *next = getNeighbour(grid, current);
-        if (next != NULL) {
-            next->visited = 1;
-            stack[stackSize++] = current;
-            removeWalls(current, next);
-            current = next;
-        } else if (stackSize > 0) {
-            current = stack[--stackSize];
+        int remainingSteps = steps;
+        while (remainingSteps-- > 0) {
+            Cell *next = getNeighbour(grid, current);
+            if (next != NULL) {
+                next->visited = 1;
+                stack[stackSize++] = current;
+                removeWalls(current, next);
+                current = next;
+            } else if (stackSize > 0) {
+                current = stack[--stackSize];
+            } else {
+                break;
+            }
         }
 
         SDL_SetRenderDrawColor(renderer, 0xFF, 0xFF, 0xFF, 0xFF);
@@ -90,13 +111,10 @@ int main(int argc, char* argv[]) {
         SDL_RenderFillRect(renderer, &endRect);
 
         SDL_RenderPresent(renderer);
-
-        SDL_Delay(10); 
     }
 
     SDL_DestroyRenderer(renderer);
     SDL_DestroyWindow(window);
-
     SDL_Quit();
 
     return 0;
