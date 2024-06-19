@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <time.h>
 #include <string.h>
+#include "version.h"
 
 #define SCREEN_WIDTH 600
 #define SCREEN_HEIGHT 600
@@ -29,7 +30,7 @@ int main(int argc, char* argv[]) {
 
     if (argc > 1) {
         for (int i = 1; i < argc; ++i) {
-            if (strcmp(argv[i], "--steps") == 0) {
+            if (strcmp(argv[i], "--steps") == 0 || strcmp(argv[i], "-s") == 0) {
                 if (i + 1 < argc) {
                     if (strcmp(argv[i + 1], "instant") == 0) {
                         steps = GRID_WIDTH * GRID_HEIGHT - 1;
@@ -37,9 +38,18 @@ int main(int argc, char* argv[]) {
                         steps = atoi(argv[i + 1]);
                     }
                 }
+            } else if (strcmp(argv[i], "--help") == 0 || strcmp(argv[i], "-h") == 0) {
+                printf("Options:\n");
+                printf("  -s, --steps <steps>    Number of steps to perform (default: 1)\n");
+                printf("                         Use 'instant' to generate complete maze at once\n");
+                printf("  -h, --help             Show this help message\n");
+                printf("\n");
+                printf("Maze Version %s\n", VERSION_STRING);
+                return 0; 
             }
         }
     }
+
 
     if (SDL_Init(SDL_INIT_VIDEO) < 0) {
         printf("SDL_Error: %s\n", SDL_GetError());
